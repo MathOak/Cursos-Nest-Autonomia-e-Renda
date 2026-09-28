@@ -1,6 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
+import sharp from 'sharp';
 import { ProdutosController } from './produtos.controller';
-import { ProdutosService } from './produtos.service';
+import { Produto, ProdutosService } from './produtos.service';
 
 describe('ProdutosController', () => {
   let controller: ProdutosController;
@@ -105,5 +109,106 @@ describe('ProdutosController', () => {
     controller.remove('1');
 
     expect(service.remove).toHaveBeenCalledWith('1');
+  });
+
+  it('deveria processar uma imagem padrão e salvar em WebP', async () => {
+    const diretorioTemporario = join(tmpdir(), `produtos-${Date.now()}`);
+    const arquivoOrigem = join(diretorioTemporario, 'origem.png');
+
+    mkdirSync(diretorioTemporario, { recursive: true });
+    await sharp({
+      create: {
+        width: 1600,
+        height: 1200,
+        channels: 3,
+        background: { r: 30, g: 120, b: 220 }
+      }
+    })
+      .png()
+      .toFile(arquivoOrigem);
+
+    service.findOne.mockReturnValue({ id: '1', imagem: null });
+    service.updateOnePartial.mockImplementation(
+      (_id, produto) => produto as Produto
+    );
+
+    const resultado = await controller.uploadImagem('1', {
+      path: arquivoOrigem
+    } as Express.Multer.File);
+
+    expect(resultado).toEqual({
+      imagem: expect.stringMatching(/\.webp$/) as string
+    });
+    expect(service.updateOnePartial).toHaveBeenCalledWith(
+      '1',
+      expect.objectContaining({
+        imagem: expect.stringMatching(/\.webp$/) as string
+      })
+    );
+
+    const imagemUrl = (resultado as { imagem: string }).imagem;
+    const arquivoProcessado = join(process.cwd(), imagemUrl.replace(/^\//, ''));
+    const metadados = await sharp(arquivoProcessado).metadata();
+
+    expect(metadados.format).toBe('webp');
+    expect(metadados.width).toBe(800);
+    expect(metadados.height).toBe(600);
+
+    rmSync(diretorioTemporario, { recursive: true, force: true });
+    rmSync(arquivoProcessado, { force: true });
+  });
+
+  it('deveria remover a imagem antiga ao substituir a imagem do produto', async () => {
+    const diretorioUpload = join(process.cwd(), 'uploads', 'produtos');
+    const diretorioTemporario = join(tmpdir(), `produtos-${Date.now()}`);
+    const arquivoOrigem = join(diretorioTemporario, 'origem.png');
+    const arquivoAntigo = join(diretorioUpload, 'imagem-antiga.webp');
+
+    mkdirSync(diretorioTemporario, { recursive: true });
+    mkdirSync(diretorioUpload, { recursive: true });
+    writeFileSync(arquivoAntigo, 'imagem antiga');
+    await sharp({
+      create: {
+        width: 100,
+        height: 100,
+        channels: 3,
+        background: { r: 220, g: 80, b: 40 }
+      }
+    })
+      .png()
+      .toFile(arquivoOrigem);
+
+    service.findOne.mockReturnValue({
+      id: '1',
+      imagem: '/uploads/produtos/imagem-antiga.webp'
+    });
+    service.updateOnePartial.mockReturnValue({ id: '1', imagem: 'nova' });
+
+    await controller.uploadImagem('1', {
+      path: arquivoOrigem
+    } as Express.Multer.File);
+
+    expect(existsSync(arquivoAntigo)).toBe(false);
+
+    rmSync(diretorioTemporario, { recursive: true, force: true });
+  });
+
+  it('deveria apagar a imagem do disco e limpar sua URL no produto', () => {
+    const diretorioUpload = join(process.cwd(), 'uploads', 'produtos');
+    const arquivoImagem = join(diretorioUpload, 'imagem-para-apagar.webp');
+
+    mkdirSync(diretorioUpload, { recursive: true });
+    writeFileSync(arquivoImagem, 'imagem');
+    service.findOne.mockReturnValue({
+      id: '1',
+      imagem: '/uploads/produtos/imagem-para-apagar.webp'
+    });
+
+    controller.removeImagem('1');
+
+    expect(existsSync(arquivoImagem)).toBe(false);
+    expect(service.updateOnePartial).toHaveBeenCalledWith('1', {
+      imagem: null
+    });
   });
 });
