@@ -21,28 +21,28 @@ export class ProdutosService {
       nome: 'notebook',
       preco: 3500,
       categoria: 'eletronicos',
-      imagem: '/uploads/produtos/notebook.jpg'
+      imagem: '/api/uploads/produtos/notebook.jpg'
     });
     this.produtos.push({
       id: '2',
       nome: 'mouse',
       preco: 150,
       categoria: 'eletronicos',
-      imagem: '/uploads/produtos/mouse.jpg'
+      imagem: '/api/uploads/produtos/mouse.jpg'
     });
     this.produtos.push({
       id: '3',
       nome: 'teclado',
       preco: 250.55,
       categoria: 'eletronicos',
-      imagem: '/uploads/produtos/teclado.jpg'
+      imagem: '/api/uploads/produtos/teclado.jpg'
     });
     this.produtos.push({
       id: '4',
       nome: 'cadeira',
       preco: 250.55,
       categoria: 'moveis',
-      imagem: '/uploads/produtos/cadeira.jpg'
+      imagem: '/api/uploads/produtos/cadeira.jpg'
     });
   }
 
@@ -67,7 +67,7 @@ export class ProdutosService {
     return newProduto;
   }
 
-  updateOne(id: string, produtoDto: UpdateProdutoDto): Produto {
+  updateOne(id: string, produtoDto: UpdateProdutoDto): Produto | undefined {
     const produtoIndex = this.produtos.findIndex(
       (produto) => produto.id === id
     );
@@ -87,7 +87,7 @@ export class ProdutosService {
   updateOnePartial(
     id: string,
     produtoDtoPartial: Partial<UpdateProdutoDto>
-  ): Produto {
+  ): Produto | undefined {
     const produtoIndex = this.produtos.findIndex(
       (produto) => produto.id === id
     );
