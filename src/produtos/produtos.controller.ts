@@ -1,4 +1,4 @@
-// produtos/produtos.services.ts
+// produtos/produtos.controller.ts
 import {
   BadRequestException,
   Body,
