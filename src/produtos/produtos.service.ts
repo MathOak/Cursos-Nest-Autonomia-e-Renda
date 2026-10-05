@@ -1,9 +1,5 @@
 // produtos/produtos.services.ts
-import {
-  Injectable,
-  //Logger,
-  NotFoundException
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { CreateProdutoDto } from './dto/create-produto.dto';
 import { UpdateProdutoDto } from './dto/update-produto.dto';
 
@@ -17,6 +13,7 @@ export type Produto = {
 
 @Injectable() // Indica que esta classe é um provedor que pode ser injetado
 export class ProdutosService {
+  private readonly logger = new Logger(ProdutosService.name);
   private readonly produtos: Produto[] = [];
 
   constructor() {
@@ -57,7 +54,7 @@ export class ProdutosService {
   findOne(id: string): Produto {
     const produto = this.produtos.find((item) => item.id === id);
     if (!produto) {
-      //this.logger.warn(`Produto ${id} não encontrado`);
+      this.logger.warn(`Produto ${id} não encontrado`);
       throw new NotFoundException(`Produto ${id} não encontrado`);
     }
     return produto;
@@ -73,6 +70,7 @@ export class ProdutosService {
     ).toString();
     const newProduto: Produto = { id: newId, ...createProdutoDTO };
     this.produtos.push(newProduto);
+    this.logger.log(`Produto ${newId} criado`);
     return newProduto;
   }
 
@@ -81,7 +79,7 @@ export class ProdutosService {
       (produto) => produto.id === id
     );
     if (produtoIndex === -1) {
-      //this.logger.warn(`Tentativa de atualizar produto inexistente: ${id}`);
+      this.logger.warn(`Tentativa de atualizar produto inexistente: ${id}`);
       throw new NotFoundException(`Produto ${id} não encontrado`);
     }
 
@@ -102,9 +100,9 @@ export class ProdutosService {
       (produto) => produto.id === id
     );
     if (produtoIndex === -1) {
-      // this.logger.warn(
-      //   `Tentativa de atualizar parcialmente produto inexistente: ${id}`
-      // );
+      this.logger.warn(
+        `Tentativa de atualizar parcialmente produto inexistente: ${id}`
+      );
       throw new NotFoundException(`Produto ${id} não encontrado`);
     }
 
@@ -121,10 +119,11 @@ export class ProdutosService {
       (produto) => produto.id === id
     );
     if (produtoIndex === -1) {
-      //this.logger.warn(`Tentativa de remover produto inexistente: ${id}`);
+      this.logger.warn(`Tentativa de remover produto inexistente: ${id}`);
       throw new NotFoundException(`Produto ${id} não encontrado`);
     }
 
     this.produtos.splice(produtoIndex, 1);
+    this.logger.log(`Produto ${id} removido do catálogo`);
   }
 }
