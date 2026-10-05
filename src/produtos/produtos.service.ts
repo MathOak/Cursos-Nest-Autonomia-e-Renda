@@ -1,5 +1,9 @@
 // produtos/produtos.services.ts
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  //Logger,
+  NotFoundException
+} from '@nestjs/common';
 import { CreateProdutoDto } from './dto/create-produto.dto';
 import { UpdateProdutoDto } from './dto/update-produto.dto';
 
@@ -50,8 +54,13 @@ export class ProdutosService {
     return this.produtos;
   }
 
-  findOne(id: string): Produto | undefined {
-    return this.produtos.find((produto) => produto.id === id);
+  findOne(id: string): Produto {
+    const produto = this.produtos.find((item) => item.id === id);
+    if (!produto) {
+      //this.logger.warn(`Produto ${id} não encontrado`);
+      throw new NotFoundException(`Produto ${id} não encontrado`);
+    }
+    return produto;
   }
 
   findAllByCategory(categoria: string): Produto[] {
@@ -67,12 +76,13 @@ export class ProdutosService {
     return newProduto;
   }
 
-  updateOne(id: string, produtoDto: UpdateProdutoDto): Produto | undefined {
+  updateOne(id: string, produtoDto: UpdateProdutoDto): Produto {
     const produtoIndex = this.produtos.findIndex(
       (produto) => produto.id === id
     );
     if (produtoIndex === -1) {
-      return;
+      //this.logger.warn(`Tentativa de atualizar produto inexistente: ${id}`);
+      throw new NotFoundException(`Produto ${id} não encontrado`);
     }
 
     this.produtos[produtoIndex] = {
@@ -87,12 +97,15 @@ export class ProdutosService {
   updateOnePartial(
     id: string,
     produtoDtoPartial: Partial<UpdateProdutoDto>
-  ): Produto | undefined {
+  ): Produto {
     const produtoIndex = this.produtos.findIndex(
       (produto) => produto.id === id
     );
     if (produtoIndex === -1) {
-      return;
+      // this.logger.warn(
+      //   `Tentativa de atualizar parcialmente produto inexistente: ${id}`
+      // );
+      throw new NotFoundException(`Produto ${id} não encontrado`);
     }
 
     this.produtos[produtoIndex] = {
@@ -108,7 +121,8 @@ export class ProdutosService {
       (produto) => produto.id === id
     );
     if (produtoIndex === -1) {
-      return;
+      //this.logger.warn(`Tentativa de remover produto inexistente: ${id}`);
+      throw new NotFoundException(`Produto ${id} não encontrado`);
     }
 
     this.produtos.splice(produtoIndex, 1);
