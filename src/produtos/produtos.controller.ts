@@ -42,6 +42,12 @@ const deleteFileIfExists = (filePath?: string | null): void => {
   }
 };
 
+const cleanupUploadedFile = (filePath: string): void => {
+  if (existsSync(filePath)) {
+    unlinkSync(filePath);
+  }
+};
+
 @Controller('produtos')
 export class ProdutosController {
   constructor(private readonly produtosService: ProdutosService) {}
@@ -104,13 +110,19 @@ export class ProdutosController {
       return;
     }
 
-    const produtoExistente = this.produtosService.findOne(id);
-    if (!produtoExistente) {
-      return;
+      throw new BadRequestException('O arquivo de imagem é obrigatório');
     }
 
-    // Remove a imagem antiga antes de substituir para não deixar arquivos órfãos.
-    deleteFileIfExists(produtoExistente.imagem);
+    let produtoExistente: Produto;
+    try {
+      produtoExistente = this.produtosService.findOne(id);
+    } catch (error) {
+      cleanupUploadedFile(file.path);
+      this.logger.warn(
+        `Upload de imagem cancelado: produto ${id} não encontrado`
+      );
+      throw error;
+    }
 
     const uploadDir = ensureUploadDir();
     const nomeArquivo = `${Date.now()}-${Math.random().toString(16).slice(2)}.webp`;
@@ -126,9 +138,16 @@ export class ProdutosController {
         .webp({ quality: 80 })
         .toFile(caminhoArquivo);
     } catch {
-      return;
+      cleanupUploadedFile(caminhoArquivo);
+      //this.logger.warn(`Imagem inválida recebida para o produto ${id}`);
+      throw new BadRequestException(
+        'O arquivo enviado não é uma imagem válida'
+      );
+    } finally {
+      cleanupUploadedFile(file.path);
     }
 
+    deleteFileIfExists(produtoExistente.imagem);
     const imagemUrl = `/uploads/produtos/${nomeArquivo}`;
     return this.produtosService.updateOnePartial(id, { imagem: imagemUrl });
   }
@@ -167,27 +186,44 @@ export class ProdutosController {
   ) {
     if (!file) {
       return;
+      
+      throw new BadRequestException('O arquivo de imagem é obrigatório');
     }
 
-    const produtoExistente = this.produtosService.findOne(id);
-    if (!produtoExistente) {
-      return;
+    let produtoExistente: Produto;
+    try {
+      produtoExistente = this.produtosService.findOne(id);
+    } catch (error) {
+      cleanupUploadedFile(file.path);
+      // this.logger.warn(
+      //   `Upload de imagem grande cancelado: produto ${id} não encontrado`
+      // );
+      throw error;
     }
-
-    deleteFileIfExists(produtoExistente.imagem);
 
     const uploadDir = ensureUploadDir();
     const nomeArquivo = `${Date.now()}-${Math.random().toString(16).slice(2)}.webp`;
     const caminhoArquivo = join(uploadDir, nomeArquivo);
 
-    await sharp(file.path)
-      .resize(1200, 1200, {
-        fit: 'inside',
-        withoutEnlargement: true
-      })
-      .webp({ quality: 75 })
-      .toFile(caminhoArquivo);
+    try {
+      await sharp(file.path)
+        .resize(1200, 1200, {
+          fit: 'inside',
+          withoutEnlargement: true
+        })
+        .webp({ quality: 75 })
+        .toFile(caminhoArquivo);
+    } catch {
+      cleanupUploadedFile(caminhoArquivo);
+      // this.logger.warn(`Imagem grande inválida recebida para o produto ${id}`);
+      throw new BadRequestException(
+        'O arquivo enviado não é uma imagem válida'
+      );
+    } finally {
+      cleanupUploadedFile(file.path);
+    }
 
+    deleteFileIfExists(produtoExistente.imagem);
     const imagemUrl = `/uploads/produtos/${nomeArquivo}`;
     return this.produtosService.updateOnePartial(id, { imagem: imagemUrl });
   }
