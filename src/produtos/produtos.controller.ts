@@ -113,7 +113,6 @@ export class ProdutosController {
       this.logger.warn(
         `Upload de imagem rejeitado para o produto ${id}: arquivo ausente`
       );
-
       throw new BadRequestException('O arquivo de imagem é obrigatório');
     }
 
@@ -193,7 +192,6 @@ export class ProdutosController {
       this.logger.warn(
         `Upload de imagem grande rejeitado para o produto ${id}: arquivo ausente`
       );
-
       throw new BadRequestException('O arquivo de imagem é obrigatório');
     }
 

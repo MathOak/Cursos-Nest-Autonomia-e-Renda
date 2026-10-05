@@ -22,7 +22,9 @@ export class AuthMiddleware implements NestMiddleware {
 
     const token = authHeader.split(' ')[1];
     if (!token) {
-      console.log(`[AUTH] Token recebido: ${token.substring(0, 10)}...`);
+      this.logger.warn(
+        `Acesso negado: ${req.method} ${req.originalUrl} (token Bearer vazio)`
+      );
       return res.status(401).json({
         statusCode: 401,
         message: 'Token de autenticação ausente ou inválido',

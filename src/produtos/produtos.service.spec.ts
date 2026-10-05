@@ -102,7 +102,7 @@ describe('ProdutosService', () => {
   it('deveria remover um produto e manter o próximo ID disponível', () => {
     service.remove('2');
 
-    expect(service.findOne('2')).toBeUndefined();
+    expect(() => service.findOne('2')).toThrow(NotFoundException);
     expect(
       service.createOne({
         nome: 'webcam',
