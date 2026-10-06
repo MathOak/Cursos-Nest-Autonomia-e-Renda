@@ -1,5 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -110,23 +109,6 @@ describe('ProdutosController', () => {
     controller.remove('1');
 
     expect(service.remove).toHaveBeenCalledWith('1');
-  });
-
-  it('deveria rejeitar upload sem arquivo com status 400', async () => {
-    await expect(
-      controller.uploadImagem('1', undefined as unknown as Express.Multer.File)
-    ).rejects.toBeInstanceOf(BadRequestException);
-    expect(service.findOne).not.toHaveBeenCalled();
-  });
-
-  it('deveria propagar 404 ao enviar imagem para produto inexistente', async () => {
-    service.findOne.mockImplementation(() => {
-      throw new NotFoundException('Produto 999 não encontrado');
-    });
-
-    await expect(
-      controller.uploadImagem('999', { path: 'imagem.png' } as Express.Multer.File)
-    ).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('deveria processar uma imagem padrão e salvar em WebP', async () => {

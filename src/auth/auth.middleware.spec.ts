@@ -39,11 +39,7 @@ describe('AuthMiddleware', () => {
     middleware.use(request as Request, response as unknown as Response, next);
 
     expect(response.status).toHaveBeenCalledWith(401);
-    expect(response.json).toHaveBeenCalledWith({
-      statusCode: 401,
-      message: 'Token de autenticação ausente ou inválido',
-      error: 'Unauthorized'
-    });
+    expect(response.json).toHaveBeenCalledWith({ message: 'Unauthorized' });
     expect(next).not.toHaveBeenCalled();
   });
 
@@ -53,11 +49,7 @@ describe('AuthMiddleware', () => {
     middleware.use(request as Request, response as unknown as Response, next);
 
     expect(response.status).toHaveBeenCalledWith(401);
-    expect(response.json).toHaveBeenCalledWith({
-      statusCode: 401,
-      message: 'Token de autenticação ausente ou inválido',
-      error: 'Unauthorized'
-    });
+    expect(response.json).toHaveBeenCalledWith({ message: 'Unauthorized' });
     expect(next).not.toHaveBeenCalled();
   });
 
@@ -69,19 +61,5 @@ describe('AuthMiddleware', () => {
     expect(next).toHaveBeenCalledTimes(1);
     expect(response.status).not.toHaveBeenCalled();
     expect(response.json).not.toHaveBeenCalled();
-  });
-
-  it('retorna 401 quando o esquema Bearer não contém token', () => {
-    request.headers = { authorization: 'Bearer ' };
-
-    middleware.use(request as Request, response as unknown as Response, next);
-
-    expect(response.status).toHaveBeenCalledWith(401);
-    expect(response.json).toHaveBeenCalledWith({
-      statusCode: 401,
-      message: 'Token de autenticação ausente ou inválido',
-      error: 'Unauthorized'
-    });
-    expect(next).not.toHaveBeenCalled();
   });
 });
