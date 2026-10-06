@@ -1,18 +1,14 @@
 // src/auth/auth.middleware.ts
-import { Injectable, Logger, NestMiddleware } from '@nestjs/common';
+import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
-  private readonly logger = new Logger(AuthMiddleware.name);
-
   use(req: Request, res: Response, next: NextFunction) {
     const authHeader = req.headers['authorization'];
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      this.logger.warn(
-        `Acesso negado: ${req.method} ${req.originalUrl} (token ausente ou esquema inválido)`
-      );
+      console.warn(`[AUTH] Requisição bloqueada: ${req.method} ${req.url}`);
       return res.status(401).json({
         statusCode: 401,
         message: 'Token de autenticação ausente ou inválido',
@@ -30,7 +26,7 @@ export class AuthMiddleware implements NestMiddleware {
       });
     }
 
-    // Lógica de validação do token aqui. Nunca registrar o token nos logs.
+    // Lógica de validação do token aqui
     next();
   }
 }

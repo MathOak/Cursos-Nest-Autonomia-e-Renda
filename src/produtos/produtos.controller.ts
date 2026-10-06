@@ -6,7 +6,6 @@ import {
   Delete,
   Get,
   HttpCode,
-  Logger,
   Param,
   Patch,
   Post,
@@ -20,7 +19,7 @@ import { existsSync, mkdirSync, unlinkSync } from 'fs';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import sharp from 'sharp';
-import { Produto, ProdutosService } from './produtos.service';
+import { ProdutosService } from './produtos.service';
 import { CreateProdutoDto } from './dto/create-produto.dto';
 import { UpdateProdutoDto } from './dto/update-produto.dto';
 
@@ -51,8 +50,6 @@ const cleanupUploadedFile = (filePath: string): void => {
 
 @Controller('produtos')
 export class ProdutosController {
-  private readonly logger = new Logger(ProdutosController.name);
-
   constructor(private readonly produtosService: ProdutosService) {}
 
   @Get()
@@ -62,7 +59,7 @@ export class ProdutosController {
 
   @Get('filtrar')
   filterByCategory(@Query('categoria') categoria: string) {
-    this.logger.log(`Filtrando produtos pela categoria "${categoria}"`);
+    console.log(`Filtrando por: ${categoria}`);
     return this.produtosService.findAllByCategory(categoria);
   }
 
@@ -110,9 +107,8 @@ export class ProdutosController {
     @UploadedFile() file: Express.Multer.File
   ) {
     if (!file) {
-      this.logger.warn(
-        `Upload de imagem rejeitado para o produto ${id}: arquivo ausente`
-      );
+      return;
+    }
 
       throw new BadRequestException('O arquivo de imagem é obrigatório');
     }
@@ -143,7 +139,7 @@ export class ProdutosController {
         .toFile(caminhoArquivo);
     } catch {
       cleanupUploadedFile(caminhoArquivo);
-      this.logger.warn(`Imagem inválida recebida para o produto ${id}`);
+      //this.logger.warn(`Imagem inválida recebida para o produto ${id}`);
       throw new BadRequestException(
         'O arquivo enviado não é uma imagem válida'
       );
@@ -153,7 +149,6 @@ export class ProdutosController {
 
     deleteFileIfExists(produtoExistente.imagem);
     const imagemUrl = `/uploads/produtos/${nomeArquivo}`;
-    this.logger.log(`Imagem do produto ${id} processada e armazenada`);
     return this.produtosService.updateOnePartial(id, { imagem: imagemUrl });
   }
 
@@ -190,10 +185,8 @@ export class ProdutosController {
     @UploadedFile() file: Express.Multer.File
   ) {
     if (!file) {
-      this.logger.warn(
-        `Upload de imagem grande rejeitado para o produto ${id}: arquivo ausente`
-      );
-
+      return;
+      
       throw new BadRequestException('O arquivo de imagem é obrigatório');
     }
 
@@ -202,9 +195,9 @@ export class ProdutosController {
       produtoExistente = this.produtosService.findOne(id);
     } catch (error) {
       cleanupUploadedFile(file.path);
-      this.logger.warn(
-        `Upload de imagem grande cancelado: produto ${id} não encontrado`
-      );
+      // this.logger.warn(
+      //   `Upload de imagem grande cancelado: produto ${id} não encontrado`
+      // );
       throw error;
     }
 
@@ -222,7 +215,7 @@ export class ProdutosController {
         .toFile(caminhoArquivo);
     } catch {
       cleanupUploadedFile(caminhoArquivo);
-      this.logger.warn(`Imagem grande inválida recebida para o produto ${id}`);
+      // this.logger.warn(`Imagem grande inválida recebida para o produto ${id}`);
       throw new BadRequestException(
         'O arquivo enviado não é uma imagem válida'
       );
@@ -232,7 +225,6 @@ export class ProdutosController {
 
     deleteFileIfExists(produtoExistente.imagem);
     const imagemUrl = `/uploads/produtos/${nomeArquivo}`;
-    this.logger.log(`Imagem grande do produto ${id} processada e armazenada`);
     return this.produtosService.updateOnePartial(id, { imagem: imagemUrl });
   }
 
@@ -241,9 +233,12 @@ export class ProdutosController {
   @HttpCode(204)
   removeImagem(@Param('id') id: string): void {
     const produto = this.produtosService.findOne(id);
+    if (!produto) {
+      return;
+    }
+
     deleteFileIfExists(produto.imagem);
     this.produtosService.updateOnePartial(id, { imagem: null });
-    this.logger.log(`Imagem removida do produto ${id}`);
   }
 
   @Put(':id')
@@ -263,6 +258,5 @@ export class ProdutosController {
   @HttpCode(204)
   remove(@Param('id') id: string): void {
     this.produtosService.remove(id);
-    this.logger.log(`Produto ${id} removido`);
   }
 }
