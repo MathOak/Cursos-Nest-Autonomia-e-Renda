@@ -9,22 +9,11 @@ export class AuthMiddleware implements NestMiddleware {
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       console.warn(`[AUTH] Requisição bloqueada: ${req.method} ${req.url}`);
-      return res.status(401).json({
-        statusCode: 401,
-        message: 'Token de autenticação ausente ou inválido',
-        error: 'Unauthorized'
-      });
+      return res.status(401).json({ message: 'Unauthorized' });
     }
 
     const token = authHeader.split(' ')[1];
-    if (!token) {
-      console.log(`[AUTH] Token recebido: ${token.substring(0, 10)}...`);
-      return res.status(401).json({
-        statusCode: 401,
-        message: 'Token de autenticação ausente ou inválido',
-        error: 'Unauthorized'
-      });
-    }
+    console.log(`[AUTH] Token recebido: ${token.substring(0, 10)}...`);
 
     // Lógica de validação do token aqui
     next();
