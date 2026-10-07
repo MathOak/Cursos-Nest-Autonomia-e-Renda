@@ -32,6 +32,26 @@ to browse the interactive Swagger documentation. API endpoints use the `/api`
 prefix; product routes require a Bearer token, which can be entered with the
 **Authorize** button in Swagger UI.
 
+## MongoDB development modes
+
+The application supports two MongoDB connection modes. Start MongoDB locally
+before selecting the local mode, or configure an Atlas connection string for
+the cloud mode:
+
+- Local: run `docker compose up -d mongodb` to start the MongoDB service, then
+  run `npm run start:dev:local`. It connects to
+  `mongodb://127.0.0.1:27017/ecommerce` by default. To override it, copy
+  `.env.local.example` to `.env.local` and set `MONGODB_URI`. Stop the local
+  database with `docker compose down`.
+- `npm run start:dev:atlas` loads `.env.atlas`. Copy
+  `.env.atlas.example` to `.env.atlas` and replace the placeholder URI with the
+  connection string from Atlas.
+
+The real `.env` files are ignored by Git. Never commit database credentials.
+In Atlas, allow only the development machine's IP and use an application
+database user with read/write access limited to the application database; do
+not use an administrator account or unrestricted network access.
+
 ## Project setup
 
 ```bash
