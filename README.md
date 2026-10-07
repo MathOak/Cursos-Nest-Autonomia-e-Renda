@@ -25,6 +25,13 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## API documentation
+
+With the application running, open [http://localhost:3000/docs](http://localhost:3000/docs)
+to browse the interactive Swagger documentation. API endpoints use the `/api`
+prefix; product routes require a Bearer token, which can be entered with the
+**Authorize** button in Swagger UI.
+
 ## Project setup
 
 ```bash
