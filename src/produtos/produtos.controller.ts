@@ -20,6 +20,21 @@ import { existsSync, mkdirSync, unlinkSync } from 'fs';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import sharp from 'sharp';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiCreatedResponse,
+  ApiBadRequestResponse,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+  ApiUnauthorizedResponse
+} from '@nestjs/swagger';
 import { Produto, ProdutosService } from './produtos.service';
 import { CreateProdutoDto } from './dto/create-produto.dto';
 import { UpdateProdutoDto } from './dto/update-produto.dto';
@@ -50,34 +65,70 @@ const cleanupUploadedFile = (filePath: string): void => {
 };
 
 @Controller('produtos')
+@ApiTags('produtos')
+@ApiBearerAuth()
 export class ProdutosController {
   private readonly logger = new Logger(ProdutosController.name);
 
   constructor(private readonly produtosService: ProdutosService) {}
 
   @Get()
+  @ApiOperation({ summary: 'Lista todos os produtos' })
+  @ApiOkResponse({ description: 'Lista de produtos retornada com sucesso' })
+  @ApiUnauthorizedResponse({ description: 'Token Bearer ausente ou inválido' })
   findAll() {
     return this.produtosService.findAll();
   }
 
   @Get('filtrar')
+  @ApiOperation({ summary: 'Filtra produtos por categoria' })
+  @ApiQuery({
+    name: 'categoria',
+    description: 'Categoria dos produtos desejados',
+    example: 'eletronicos'
+  })
+  @ApiOkResponse({ description: 'Produtos da categoria retornados com sucesso' })
+  @ApiUnauthorizedResponse({ description: 'Token Bearer ausente ou inválido' })
   filterByCategory(@Query('categoria') categoria: string) {
     this.logger.log(`Filtrando produtos pela categoria "${categoria}"`);
     return this.produtosService.findAllByCategory(categoria);
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Busca um produto pelo identificador' })
+  @ApiParam({ name: 'id', description: 'Identificador do produto', example: '1' })
+  @ApiOkResponse({ description: 'Produto encontrado' })
+  @ApiNotFoundResponse({ description: 'Produto não encontrado' })
+  @ApiUnauthorizedResponse({ description: 'Token Bearer ausente ou inválido' })
   findOne(@Param('id') id: string) {
     return this.produtosService.findOne(id);
   }
 
   @Post()
+  @ApiOperation({ summary: 'Cadastra um produto no catálogo' })
+  @ApiCreatedResponse({ description: 'Produto criado com sucesso' })
+  @ApiBadRequestResponse({ description: 'Dados enviados são inválidos' })
+  @ApiUnauthorizedResponse({ description: 'Token Bearer ausente ou inválido' })
   create(@Body() createProdutoDto: CreateProdutoDto) {
     return this.produtosService.createOne(createProdutoDto);
   }
 
   // Fluxo padrão: arquivos até 5MB. Limite pequeno para evitar peso excessivo.
   @Post(':id/imagem')
+  @ApiOperation({ summary: 'Envia uma imagem de produto de até 5 MB' })
+  @ApiParam({ name: 'id', description: 'Identificador do produto', example: '1' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['imagem'],
+      properties: { imagem: { type: 'string', format: 'binary' } }
+    }
+  })
+  @ApiOkResponse({ description: 'Imagem convertida para WebP e associada ao produto' })
+  @ApiBadRequestResponse({ description: 'Arquivo ausente, inválido ou maior que 5 MB' })
+  @ApiNotFoundResponse({ description: 'Produto não encontrado' })
+  @ApiUnauthorizedResponse({ description: 'Token Bearer ausente ou inválido' })
   @UseInterceptors(
     FileInterceptor('imagem', {
       limits: {
@@ -158,6 +209,20 @@ export class ProdutosController {
 
   // Fluxo específico para imagens maiores, com limite mais alto e ajuste de qualidade.
   @Post(':id/imagem-grande')
+  @ApiOperation({ summary: 'Envia uma imagem de produto de até 20 MB' })
+  @ApiParam({ name: 'id', description: 'Identificador do produto', example: '1' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['imagem'],
+      properties: { imagem: { type: 'string', format: 'binary' } }
+    }
+  })
+  @ApiOkResponse({ description: 'Imagem convertida para WebP e associada ao produto' })
+  @ApiBadRequestResponse({ description: 'Arquivo ausente, inválido ou maior que 20 MB' })
+  @ApiNotFoundResponse({ description: 'Produto não encontrado' })
+  @ApiUnauthorizedResponse({ description: 'Token Bearer ausente ou inválido' })
   @UseInterceptors(
     FileInterceptor('imagem', {
       limits: {
@@ -237,6 +302,11 @@ export class ProdutosController {
   // Remove a imagem do produto e apaga o arquivo físico do disco.
   @Delete(':id/imagem')
   @HttpCode(204)
+  @ApiOperation({ summary: 'Remove a imagem de um produto' })
+  @ApiParam({ name: 'id', description: 'Identificador do produto', example: '1' })
+  @ApiNoContentResponse({ description: 'Imagem removida com sucesso' })
+  @ApiNotFoundResponse({ description: 'Produto não encontrado' })
+  @ApiUnauthorizedResponse({ description: 'Token Bearer ausente ou inválido' })
   removeImagem(@Param('id') id: string): void {
     const produto = this.produtosService.findOne(id);
     deleteFileIfExists(produto.imagem);
@@ -245,11 +315,23 @@ export class ProdutosController {
   }
 
   @Put(':id')
+  @ApiOperation({ summary: 'Atualiza os dados de um produto' })
+  @ApiParam({ name: 'id', description: 'Identificador do produto', example: '1' })
+  @ApiOkResponse({ description: 'Produto atualizado com sucesso' })
+  @ApiBadRequestResponse({ description: 'Dados enviados são inválidos' })
+  @ApiNotFoundResponse({ description: 'Produto não encontrado' })
+  @ApiUnauthorizedResponse({ description: 'Token Bearer ausente ou inválido' })
   update(@Param('id') id: string, @Body() dto: UpdateProdutoDto) {
     return this.produtosService.updateOne(id, dto);
   }
 
   @Patch(':id')
+  @ApiOperation({ summary: 'Atualiza parcialmente os dados de um produto' })
+  @ApiParam({ name: 'id', description: 'Identificador do produto', example: '1' })
+  @ApiOkResponse({ description: 'Produto atualizado com sucesso' })
+  @ApiBadRequestResponse({ description: 'Dados enviados são inválidos' })
+  @ApiNotFoundResponse({ description: 'Produto não encontrado' })
+  @ApiUnauthorizedResponse({ description: 'Token Bearer ausente ou inválido' })
   updatePartial(
     @Param('id') id: string,
     @Body() dto: Partial<UpdateProdutoDto>
@@ -259,6 +341,11 @@ export class ProdutosController {
 
   @Delete(':id')
   @HttpCode(204)
+  @ApiOperation({ summary: 'Remove um produto do catálogo' })
+  @ApiParam({ name: 'id', description: 'Identificador do produto', example: '1' })
+  @ApiNoContentResponse({ description: 'Produto removido com sucesso' })
+  @ApiNotFoundResponse({ description: 'Produto não encontrado' })
+  @ApiUnauthorizedResponse({ description: 'Token Bearer ausente ou inválido' })
   remove(@Param('id') id: string): void {
     this.produtosService.remove(id);
     this.logger.log(`Produto ${id} removido`);
