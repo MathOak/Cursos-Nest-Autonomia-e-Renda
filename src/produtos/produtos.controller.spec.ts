@@ -42,31 +42,33 @@ describe('ProdutosController', () => {
     expect(controller).toBeDefined();
   });
 
-  it('deveria buscar todos os produtos', () => {
+  it('deveria buscar todos os produtos', async () => {
     const produtos = [{ id: '1', nome: 'notebook' }];
     service.findAll.mockReturnValue(produtos);
 
-    expect(controller.findAll()).toBe(produtos);
+    await expect(controller.findAll()).resolves.toBe(produtos);
     expect(service.findAll).toHaveBeenCalledTimes(1);
   });
 
-  it('deveria buscar um produto pelo id', () => {
+  it('deveria buscar um produto pelo id', async () => {
     const produto = { id: '1', nome: 'notebook' };
     service.findOne.mockReturnValue(produto);
 
-    expect(controller.findOne('1')).toBe(produto);
+    await expect(controller.findOne('1')).resolves.toBe(produto);
     expect(service.findOne).toHaveBeenCalledWith('1');
   });
 
-  it('deveria filtrar produtos por categoria', () => {
+  it('deveria filtrar produtos por categoria', async () => {
     const produtos = [{ id: '1', nome: 'notebook' }];
     service.findAllByCategory.mockReturnValue(produtos);
 
-    expect(controller.filterByCategory('eletronicos')).toBe(produtos);
+    await expect(controller.filterByCategory('eletronicos')).resolves.toBe(
+      produtos
+    );
     expect(service.findAllByCategory).toHaveBeenCalledWith('eletronicos');
   });
 
-  it('deveria criar um produto', () => {
+  it('deveria criar um produto', async () => {
     const produtoDto = {
       nome: 'monitor',
       preco: 1200,
@@ -75,11 +77,11 @@ describe('ProdutosController', () => {
     const produtoCriado = { id: '5', ...produtoDto };
     service.createOne.mockReturnValue(produtoCriado);
 
-    expect(controller.create(produtoDto)).toBe(produtoCriado);
+    await expect(controller.create(produtoDto)).resolves.toBe(produtoCriado);
     expect(service.createOne).toHaveBeenCalledWith(produtoDto);
   });
 
-  it('deveria atualizar um produto completamente', () => {
+  it('deveria atualizar um produto completamente', async () => {
     const produtoDto = {
       nome: 'monitor ultrawide',
       preco: 1800,
@@ -88,11 +90,13 @@ describe('ProdutosController', () => {
     const produtoAtualizado = { id: '1', ...produtoDto };
     service.updateOne.mockReturnValue(produtoAtualizado);
 
-    expect(controller.update('1', produtoDto)).toBe(produtoAtualizado);
+    await expect(controller.update('1', produtoDto)).resolves.toBe(
+      produtoAtualizado
+    );
     expect(service.updateOne).toHaveBeenCalledWith('1', produtoDto);
   });
 
-  it('deveria atualizar parcialmente um produto', () => {
+  it('deveria atualizar parcialmente um produto', async () => {
     const produtoDto = { preco: 1750 };
     const produtoAtualizado = {
       id: '1',
@@ -102,12 +106,14 @@ describe('ProdutosController', () => {
     };
     service.updateOnePartial.mockReturnValue(produtoAtualizado);
 
-    expect(controller.updatePartial('1', produtoDto)).toBe(produtoAtualizado);
+    await expect(controller.updatePartial('1', produtoDto)).resolves.toBe(
+      produtoAtualizado
+    );
     expect(service.updateOnePartial).toHaveBeenCalledWith('1', produtoDto);
   });
 
-  it('deveria remover um produto', () => {
-    controller.remove('1');
+  it('deveria remover um produto', async () => {
+    await controller.remove('1');
 
     expect(service.remove).toHaveBeenCalledWith('1');
   });
@@ -125,7 +131,9 @@ describe('ProdutosController', () => {
     });
 
     await expect(
-      controller.uploadImagem('999', { path: 'imagem.png' } as Express.Multer.File)
+      controller.uploadImagem('999', {
+        path: 'imagem.png'
+      } as Express.Multer.File)
     ).rejects.toBeInstanceOf(NotFoundException);
   });
 
@@ -211,7 +219,7 @@ describe('ProdutosController', () => {
     rmSync(diretorioTemporario, { recursive: true, force: true });
   });
 
-  it('deveria apagar a imagem do disco e limpar sua URL no produto', () => {
+  it('deveria apagar a imagem do disco e limpar sua URL no produto', async () => {
     const diretorioUpload = join(process.cwd(), 'uploads', 'produtos');
     const arquivoImagem = join(diretorioUpload, 'imagem-para-apagar.webp');
 
@@ -222,7 +230,7 @@ describe('ProdutosController', () => {
       imagem: '/uploads/produtos/imagem-para-apagar.webp'
     });
 
-    controller.removeImagem('1');
+    await controller.removeImagem('1');
 
     expect(existsSync(arquivoImagem)).toBe(false);
     expect(service.updateOnePartial).toHaveBeenCalledWith('1', {

@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CreateUsuarioDto } from './schemas/create-usuario.schema';
+import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UsuariosController } from './usuarios.controller';
 import { UsuariosService } from './usuarios.service';
 
@@ -22,7 +22,7 @@ describe('UsuariosController', () => {
     expect(controller).toBeDefined();
   });
 
-  it('deveria encaminhar os dados validados ao serviço e retornar o usuário criado', () => {
+  it('deveria encaminhar os dados validados ao serviço e retornar o usuário criado', async () => {
     const dto: CreateUsuarioDto = {
       nome: 'Ana Silva',
       email: 'ana@example.com',
@@ -30,9 +30,9 @@ describe('UsuariosController', () => {
       departamento: 'TI'
     };
     const usuarioCriado = { id: '1', ...dto };
-    usuariosService.createOne.mockReturnValue(usuarioCriado);
+    usuariosService.createOne.mockResolvedValue(usuarioCriado);
 
-    expect(controller.create(dto)).toBe(usuarioCriado);
+    await expect(controller.create(dto)).resolves.toBe(usuarioCriado);
     expect(usuariosService.createOne).toHaveBeenCalledWith(dto);
     expect(usuariosService.createOne).toHaveBeenCalledTimes(1);
   });

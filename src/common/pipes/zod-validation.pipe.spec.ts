@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { createUsuarioSchema } from '../../usuarios/schemas/create-usuario.schema';
+import { createUsuarioSchema } from '../../usuarios/dto/create-usuario.dto';
 import { ZodValidationPipe } from './zod-validation.pipe';
 
 describe('ZodValidationPipe', () => {
