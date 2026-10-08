@@ -4,6 +4,7 @@ import {
   ApiBadRequestResponse,
   ApiBody,
   ApiCreatedResponse,
+  ApiConflictResponse,
   ApiOperation,
   ApiTags
 } from '@nestjs/swagger';
@@ -12,7 +13,7 @@ import { UsuariosService } from './usuarios.service';
 import {
   createUsuarioSchema,
   CreateUsuarioDto
-} from './schemas/create-usuario.schema';
+} from './dto/create-usuario.dto';
 
 @Controller('usuarios')
 @ApiTags('usuarios')
@@ -40,6 +41,7 @@ export class UsuariosController {
   })
   @ApiCreatedResponse({ description: 'Usuário cadastrado com sucesso' })
   @ApiBadRequestResponse({ description: 'Dados enviados são inválidos' })
+  @ApiConflictResponse({ description: 'Já existe um usuário com este e-mail' })
   create(@Body() createUsuarioDto: CreateUsuarioDto) {
     return this.usuariosService.createOne(createUsuarioDto);
   }

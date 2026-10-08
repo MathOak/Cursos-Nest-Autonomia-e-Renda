@@ -76,7 +76,7 @@ export class ProdutosController {
   @ApiOperation({ summary: 'Lista todos os produtos' })
   @ApiOkResponse({ description: 'Lista de produtos retornada com sucesso' })
   @ApiUnauthorizedResponse({ description: 'Token Bearer ausente ou inválido' })
-  findAll() {
+  async findAll() {
     return this.produtosService.findAll();
   }
 
@@ -87,20 +87,26 @@ export class ProdutosController {
     description: 'Categoria dos produtos desejados',
     example: 'eletronicos'
   })
-  @ApiOkResponse({ description: 'Produtos da categoria retornados com sucesso' })
+  @ApiOkResponse({
+    description: 'Produtos da categoria retornados com sucesso'
+  })
   @ApiUnauthorizedResponse({ description: 'Token Bearer ausente ou inválido' })
-  filterByCategory(@Query('categoria') categoria: string) {
+  async filterByCategory(@Query('categoria') categoria: string) {
     this.logger.log(`Filtrando produtos pela categoria "${categoria}"`);
     return this.produtosService.findAllByCategory(categoria);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Busca um produto pelo identificador' })
-  @ApiParam({ name: 'id', description: 'Identificador do produto', example: '1' })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador do produto',
+    example: '1'
+  })
   @ApiOkResponse({ description: 'Produto encontrado' })
   @ApiNotFoundResponse({ description: 'Produto não encontrado' })
   @ApiUnauthorizedResponse({ description: 'Token Bearer ausente ou inválido' })
-  findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string) {
     return this.produtosService.findOne(id);
   }
 
@@ -109,14 +115,18 @@ export class ProdutosController {
   @ApiCreatedResponse({ description: 'Produto criado com sucesso' })
   @ApiBadRequestResponse({ description: 'Dados enviados são inválidos' })
   @ApiUnauthorizedResponse({ description: 'Token Bearer ausente ou inválido' })
-  create(@Body() createProdutoDto: CreateProdutoDto) {
+  async create(@Body() createProdutoDto: CreateProdutoDto) {
     return this.produtosService.createOne(createProdutoDto);
   }
 
   // Fluxo padrão: arquivos até 5MB. Limite pequeno para evitar peso excessivo.
   @Post(':id/imagem')
   @ApiOperation({ summary: 'Envia uma imagem de produto de até 5 MB' })
-  @ApiParam({ name: 'id', description: 'Identificador do produto', example: '1' })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador do produto',
+    example: '1'
+  })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -125,8 +135,12 @@ export class ProdutosController {
       properties: { imagem: { type: 'string', format: 'binary' } }
     }
   })
-  @ApiOkResponse({ description: 'Imagem convertida para WebP e associada ao produto' })
-  @ApiBadRequestResponse({ description: 'Arquivo ausente, inválido ou maior que 5 MB' })
+  @ApiOkResponse({
+    description: 'Imagem convertida para WebP e associada ao produto'
+  })
+  @ApiBadRequestResponse({
+    description: 'Arquivo ausente, inválido ou maior que 5 MB'
+  })
   @ApiNotFoundResponse({ description: 'Produto não encontrado' })
   @ApiUnauthorizedResponse({ description: 'Token Bearer ausente ou inválido' })
   @UseInterceptors(
@@ -169,7 +183,7 @@ export class ProdutosController {
 
     let produtoExistente: Produto;
     try {
-      produtoExistente = this.produtosService.findOne(id);
+      produtoExistente = await this.produtosService.findOne(id);
     } catch (error) {
       cleanupUploadedFile(file.path);
       this.logger.warn(
@@ -210,7 +224,11 @@ export class ProdutosController {
   // Fluxo específico para imagens maiores, com limite mais alto e ajuste de qualidade.
   @Post(':id/imagem-grande')
   @ApiOperation({ summary: 'Envia uma imagem de produto de até 20 MB' })
-  @ApiParam({ name: 'id', description: 'Identificador do produto', example: '1' })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador do produto',
+    example: '1'
+  })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -219,8 +237,12 @@ export class ProdutosController {
       properties: { imagem: { type: 'string', format: 'binary' } }
     }
   })
-  @ApiOkResponse({ description: 'Imagem convertida para WebP e associada ao produto' })
-  @ApiBadRequestResponse({ description: 'Arquivo ausente, inválido ou maior que 20 MB' })
+  @ApiOkResponse({
+    description: 'Imagem convertida para WebP e associada ao produto'
+  })
+  @ApiBadRequestResponse({
+    description: 'Arquivo ausente, inválido ou maior que 20 MB'
+  })
   @ApiNotFoundResponse({ description: 'Produto não encontrado' })
   @ApiUnauthorizedResponse({ description: 'Token Bearer ausente ou inválido' })
   @UseInterceptors(
@@ -262,7 +284,7 @@ export class ProdutosController {
 
     let produtoExistente: Produto;
     try {
-      produtoExistente = this.produtosService.findOne(id);
+      produtoExistente = await this.produtosService.findOne(id);
     } catch (error) {
       cleanupUploadedFile(file.path);
       this.logger.warn(
@@ -303,36 +325,48 @@ export class ProdutosController {
   @Delete(':id/imagem')
   @HttpCode(204)
   @ApiOperation({ summary: 'Remove a imagem de um produto' })
-  @ApiParam({ name: 'id', description: 'Identificador do produto', example: '1' })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador do produto',
+    example: '1'
+  })
   @ApiNoContentResponse({ description: 'Imagem removida com sucesso' })
   @ApiNotFoundResponse({ description: 'Produto não encontrado' })
   @ApiUnauthorizedResponse({ description: 'Token Bearer ausente ou inválido' })
-  removeImagem(@Param('id') id: string): void {
-    const produto = this.produtosService.findOne(id);
+  async removeImagem(@Param('id') id: string): Promise<void> {
+    const produto = await this.produtosService.findOne(id);
     deleteFileIfExists(produto.imagem);
-    this.produtosService.updateOnePartial(id, { imagem: null });
+    await this.produtosService.updateOnePartial(id, { imagem: null });
     this.logger.log(`Imagem removida do produto ${id}`);
   }
 
   @Put(':id')
   @ApiOperation({ summary: 'Atualiza os dados de um produto' })
-  @ApiParam({ name: 'id', description: 'Identificador do produto', example: '1' })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador do produto',
+    example: '1'
+  })
   @ApiOkResponse({ description: 'Produto atualizado com sucesso' })
   @ApiBadRequestResponse({ description: 'Dados enviados são inválidos' })
   @ApiNotFoundResponse({ description: 'Produto não encontrado' })
   @ApiUnauthorizedResponse({ description: 'Token Bearer ausente ou inválido' })
-  update(@Param('id') id: string, @Body() dto: UpdateProdutoDto) {
+  async update(@Param('id') id: string, @Body() dto: UpdateProdutoDto) {
     return this.produtosService.updateOne(id, dto);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Atualiza parcialmente os dados de um produto' })
-  @ApiParam({ name: 'id', description: 'Identificador do produto', example: '1' })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador do produto',
+    example: '1'
+  })
   @ApiOkResponse({ description: 'Produto atualizado com sucesso' })
   @ApiBadRequestResponse({ description: 'Dados enviados são inválidos' })
   @ApiNotFoundResponse({ description: 'Produto não encontrado' })
   @ApiUnauthorizedResponse({ description: 'Token Bearer ausente ou inválido' })
-  updatePartial(
+  async updatePartial(
     @Param('id') id: string,
     @Body() dto: Partial<UpdateProdutoDto>
   ) {
@@ -342,12 +376,16 @@ export class ProdutosController {
   @Delete(':id')
   @HttpCode(204)
   @ApiOperation({ summary: 'Remove um produto do catálogo' })
-  @ApiParam({ name: 'id', description: 'Identificador do produto', example: '1' })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador do produto',
+    example: '1'
+  })
   @ApiNoContentResponse({ description: 'Produto removido com sucesso' })
   @ApiNotFoundResponse({ description: 'Produto não encontrado' })
   @ApiUnauthorizedResponse({ description: 'Token Bearer ausente ou inválido' })
-  remove(@Param('id') id: string): void {
-    this.produtosService.remove(id);
+  async remove(@Param('id') id: string): Promise<void> {
+    await this.produtosService.remove(id);
     this.logger.log(`Produto ${id} removido`);
   }
 }
