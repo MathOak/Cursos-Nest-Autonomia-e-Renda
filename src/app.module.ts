@@ -31,20 +31,22 @@ const databaseModules = isTestEnvironment
             );
           }
 
-          return { uri };
-        },
-        connectionFactory: (connection: Connection) => {
-          const logger = new Logger('MongoDB');
-          connection.on('connected', () =>
-            logger.log(`Conectado ao MongoDB no modo ${mongoMode}`)
-          );
-          connection.on('error', () =>
-            logger.error('Falha na conexão ou em uma operação MongoDB')
-          );
-          connection.on('disconnected', () =>
-            logger.warn('Conexão com MongoDB encerrada')
-          );
-          return connection;
+          return {
+            uri,
+            connectionFactory: (connection: Connection) => {
+              const logger = new Logger('MongoDB');
+              connection.on('connected', () =>
+                logger.log(`Conectado ao MongoDB no modo ${mongoMode}`)
+              );
+              connection.on('error', () =>
+                logger.error('Falha na conexão ou em uma operação MongoDB')
+              );
+              connection.on('disconnected', () =>
+                logger.warn('Conexão com MongoDB encerrada')
+              );
+              return connection;
+            }
+          };
         }
       })
     ];

@@ -12,7 +12,7 @@ import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { UsuariosService } from './usuarios.service';
 import {
   createUsuarioSchema,
-  CreateUsuarioDto
+  type CreateUsuarioDto
 } from './dto/create-usuario.dto';
 
 @Controller('usuarios')
