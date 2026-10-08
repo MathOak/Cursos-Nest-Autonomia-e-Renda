@@ -52,6 +52,11 @@ In Atlas, allow only the development machine's IP and use an application
 database user with read/write access limited to the application database; do
 not use an administrator account or unrestricted network access.
 
+Product and user records are persisted in the `produtos` and `usuarios`
+collections. Mongoose schemas validate stored values, and service methods use
+the injected models for asynchronous CRUD operations. Product and user API
+responses expose MongoDB ObjectIds as string `id` values.
+
 ## Project setup
 
 ```bash
