@@ -1,4 +1,3 @@
-// src\usuarios\schemas\create-usuario.schema.ts
 import { z } from 'zod';
 
 export const createUsuarioSchema = z.object({
