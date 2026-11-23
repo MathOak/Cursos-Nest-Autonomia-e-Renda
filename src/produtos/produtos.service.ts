@@ -1,52 +1,20 @@
 // produtos/produtos.services.ts
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { CreateProdutoDto } from './dto/create-produto.dto';
 import { UpdateProdutoDto } from './dto/update-produto.dto';
-
-export type Produto = {
-  id: string;
-  nome: string;
-  categoria: string;
-  preco: number;
-  imagem?: string | null;
-};
+import { Produto, ProdutoDocument } from './schema/produto.schema';
+import { Error, Model } from 'mongoose';
+import { InjectModel } from '@nestjs/mongoose';
 
 @Injectable() // Indica que esta classe é um provedor que pode ser injetado
 export class ProdutosService {
-  private readonly produtos: Produto[] = [];
+  private readonly produtos: ProdutoDocument[] = [];
 
-  constructor() {
-    this.produtos.push({
-      id: '1',
-      nome: 'notebook',
-      preco: 3500,
-      categoria: 'eletronicos',
-      imagem: '/api/uploads/produtos/notebook.jpg'
-    });
-    this.produtos.push({
-      id: '2',
-      nome: 'mouse',
-      preco: 150,
-      categoria: 'eletronicos',
-      imagem: '/api/uploads/produtos/mouse.jpg'
-    });
-    this.produtos.push({
-      id: '3',
-      nome: 'teclado',
-      preco: 250.55,
-      categoria: 'eletronicos',
-      imagem: '/api/uploads/produtos/teclado.jpg'
-    });
-    this.produtos.push({
-      id: '4',
-      nome: 'cadeira',
-      preco: 250.55,
-      categoria: 'moveis',
-      imagem: '/api/uploads/produtos/cadeira.jpg'
-    });
-  }
+  constructor(
+    @InjectModel('Produto') private readonly produtoModel: Model<Produto>
+  ) {}
 
-  findAll(): Produto[] {
+  findAll(): ProdutoDocument[] {
     return this.produtos;
   }
 
@@ -58,13 +26,24 @@ export class ProdutosService {
     return this.produtos.filter((produto) => produto.categoria === categoria);
   }
 
-  createOne(createProdutoDTO: CreateProdutoDto): Produto {
-    const newId = (
-      Math.max(...this.produtos.map((produto) => Number(produto.id)), 0) + 1
-    ).toString();
-    const newProduto: Produto = { id: newId, ...createProdutoDTO };
-    this.produtos.push(newProduto);
-    return newProduto;
+  async createOne(
+    createProdutoDTO: CreateProdutoDto
+  ): Promise<ProdutoDocument> {
+    try {
+      return await this.produtoModel.create(createProdutoDTO);
+    } catch (err: unknown) {
+      const logger = new Logger();
+      if (err instanceof Error) {
+        logger.error(`Falha ao inserir produto: ${err.message}`);
+        if (err.name === 'ValidationError')
+          throw new BadRequestException(err.message);
+        throw err;
+      } else {
+        // Pode ser algo que não é Error
+        logger.error(`Erro desconhecido: ${String(err)}`);
+        throw err;
+      }
+    }
   }
 
   updateOne(id: string, produtoDto: UpdateProdutoDto): Produto | undefined {
@@ -74,12 +53,7 @@ export class ProdutosService {
     if (produtoIndex === -1) {
       return;
     }
-
-    this.produtos[produtoIndex] = {
-      ...this.produtos[produtoIndex],
-      ...produtoDto,
-      id
-    };
+    console.log(produtoDto);
 
     return this.produtos[produtoIndex];
   }
@@ -94,11 +68,7 @@ export class ProdutosService {
     if (produtoIndex === -1) {
       return;
     }
-
-    this.produtos[produtoIndex] = {
-      ...this.produtos[produtoIndex],
-      ...produtoDtoPartial
-    };
+    console.log(produtoDtoPartial);
 
     return this.produtos[produtoIndex];
   }
