@@ -9,11 +9,16 @@ export class Produto {
   nome!: string;
   @Prop({ required: true, min: 0 })
   preco!: number;
-  @Prop({ required: true, enum: ['Eletrônicos', 'Ferramentas', 'EPI'] })
+  @Prop({
+    required: true,
+    enum: ['Eletrônicos', 'Ferramentas', 'EPI', 'Alcoólico']
+  })
   categoria!: string;
   @Prop({ default: 0, min: 0 })
   estoque!: number;
   @Prop({ default: true })
   ativo!: boolean;
+  @Prop({})
+  imagem?: string;
 }
 export const ProdutoSchema = SchemaFactory.createForClass(Produto);

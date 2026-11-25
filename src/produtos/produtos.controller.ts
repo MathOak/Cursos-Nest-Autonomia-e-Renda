@@ -22,6 +22,7 @@ import sharp from 'sharp';
 import { ProdutosService } from './produtos.service';
 import { CreateProdutoDto } from './dto/create-produto.dto';
 import { UpdateProdutoDto } from './dto/update-produto.dto';
+import { FiltroProdutoDto } from './dto/filtro-produto.dto';
 
 const ensureUploadDir = (): string => {
   const uploadDir = join(process.cwd(), 'uploads', 'produtos');
@@ -47,8 +48,8 @@ export class ProdutosController {
   constructor(private readonly produtosService: ProdutosService) {}
 
   @Get()
-  findAll() {
-    return this.produtosService.findAll();
+  async findAll(@Query() filtros: FiltroProdutoDto) {
+    return await this.produtosService.findAll(filtros);
   }
 
   @Get('filtrar')
@@ -63,8 +64,9 @@ export class ProdutosController {
   }
 
   @Post()
-  create(@Body() createProdutoDto: CreateProdutoDto) {
-    return this.produtosService.createOne(createProdutoDto);
+  @HttpCode(201)
+  async create(@Body() createProdutoDto: CreateProdutoDto) {
+    return await this.produtosService.createOne(createProdutoDto);
   }
 
   // Fluxo padrão: arquivos até 5MB. Limite pequeno para evitar peso excessivo.
@@ -104,7 +106,7 @@ export class ProdutosController {
       return;
     }
 
-    const produtoExistente = this.produtosService.findOne(id);
+    const produtoExistente = await this.produtosService.findOne(id);
     if (!produtoExistente) {
       return;
     }
@@ -169,11 +171,10 @@ export class ProdutosController {
       return;
     }
 
-    const produtoExistente = this.produtosService.findOne(id);
+    const produtoExistente = await this.produtosService.findOne(id);
     if (!produtoExistente) {
       return;
     }
-
     deleteFileIfExists(produtoExistente.imagem);
 
     const uploadDir = ensureUploadDir();
@@ -195,12 +196,11 @@ export class ProdutosController {
   // Remove a imagem do produto e apaga o arquivo físico do disco.
   @Delete(':id/imagem')
   @HttpCode(204)
-  removeImagem(@Param('id') id: string): void {
-    const produto = this.produtosService.findOne(id);
+  async removeImagem(@Param('id') id: string): Promise<void> {
+    const produto = await this.produtosService.findOne(id);
     if (!produto) {
       return;
     }
-
     deleteFileIfExists(produto.imagem);
     this.produtosService.updateOnePartial(id, { imagem: null });
   }
